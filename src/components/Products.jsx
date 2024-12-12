@@ -1,93 +1,154 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import Footer from "./Footer";
 import Header from "./Header";
 import { FaShoppingCart } from "react-icons/fa";
 
-const popularProducts = [
-  {
-    name: "Red Carrot",
-    price: 2.99,
-    image: "https://via.placeholder.com/300x200",
-  },
-  {
-    name: "Cauliflower",
-    price: 3.49,
-    image: "https://via.placeholder.com/300x200",
-  },
-  {
-    name: "Cilantro",
-    price: 1.99,
-    image: "https://via.placeholder.com/300x200",
-  },
-  {
-    name: "Green Capsicum (500gm)",
-    price: 4.99,
-    image: "https://via.placeholder.com/300x200",
-  },
-  {
-    name: "Green Capsicum (500gm)",
-    price: 4.99,
-    image: "https://via.placeholder.com/300x200",
-  },
-  {
-    name: "Green Capsicum (500gm)",
-    price: 4.99,
-    image: "https://via.placeholder.com/300x200",
-  },
-  {
-    name: "Green Capsicum (500gm)",
-    price: 4.99,
-    image: "https://via.placeholder.com/300x200",
-  },
-];
-
 function Products() {
+  const [products, setProducts] = useState([]);
   const [searchQuery, setSearchQuery] = useState("");
-  const [quantity, setQuantity] = useState(1); // Keep track of quantity
+  const [quantity, setQuantity] = useState(1);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [orderSuccess, setOrderSuccess] = useState(false);
-  const [selectedProduct, setSelectedProduct] = useState(null); // Store selected product
+  const [selectedProduct, setSelectedProduct] = useState(null);
   const navigate = useNavigate();
+  const selectedCategory = sessionStorage.getItem("selectedCategory");
+  const userDetails = JSON.parse(sessionStorage.getItem("user"));
 
-  // Calculate total price and shipping
-  const totalPrice = selectedProduct ? selectedProduct.price * quantity : 0;
+  const totalPrice = selectedProduct ? selectedProduct.product_price * quantity : 0;
   const shipping = 5.0;
   const totalAmount = totalPrice + shipping;
 
-  // Handle quantity change
+  useEffect(() => {
+    const fetchProducts = async () => {
+      if (!selectedCategory) return;
+
+      try {
+        const response = await fetch(
+          `http://localhost:1337/api/products?filters[category_name][$eq]=${selectedCategory}`
+        );
+
+        if (!response.ok) {
+          throw new Error("Failed to fetch products");
+        }
+
+        const data = await response.json();
+        const result = data.data;
+        console.log(result);
+        setProducts(result);
+      } catch (error) {
+        console.error("Error fetching products:", error);
+      }
+    };
+
+    fetchProducts();
+  }, [selectedCategory]);
+
   const handleQuantityChange = (value) => {
-    setQuantity(Math.max(1, value)); // Prevent quantity from going below 1
+    setQuantity(Math.max(1, value));
   };
 
-  // Handle modal open and order details
-  const handleBuyNow = (product) => {
+  const handleAddToCart = async () => {
+    const cartData = {
+      data: {
+        product_name: selectedProduct.product_name,
+        quantity: quantity,
+        price: selectedProduct.product_price,
+        user_name: userDetails.name, 
+      }
+    };
+
+    const jsonString = JSON.stringify(cartData);
+
+    try {
+      const response = await fetch("http://localhost:1337/api/carts", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json", 
+        },
+        body: jsonString,
+      });
+
+      if (response.ok) {
+        const data = await response.json();
+        alert("Product added to cart!");
+        console.log(data);
+        setOrderSuccess(true);
+      } else {
+        const errorData = await response.text(); 
+        alert("Failed to add to cart!");
+        console.error(errorData);
+      }
+    } catch (error) {
+      console.error("Error:", error);
+      alert("An error occurred while adding to cart!");
+    }
+  };
+
+  const handleCart = (product) => {
     setSelectedProduct(product);
     setIsModalOpen(true);
+    console.log(userDetails.name)
   };
 
-  // Handle close modal
   const handleCloseModal = () => {
     setIsModalOpen(false);
     setOrderSuccess(false);
   };
 
-  // Handle place order
-  const handlePlaceOrder = () => {
-    setOrderSuccess(true);
+  const filteredProducts = products.filter((product) =>
+    product.product_name.toLowerCase().includes(searchQuery.toLowerCase())
+  );
+
+  const handleCheckout = async (product) => {
+    console.log(product)
+    const today = new Date();
+    const formattedDate = today.toISOString().split('T')[0];
+
+    const cartData = {
+      data: {
+        product_name: product.product_name,
+        quantity: quantity,
+        total: product.product_price * quantity,
+        customer_name: userDetails.name,
+        date: formattedDate,
+      }
+    };
+
+
+    const jsonString = JSON.stringify(cartData);
+
+    try {
+      const response = await fetch("http://localhost:1337/api/transactions", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json", 
+        },
+        body: jsonString,
+      });
+
+      if (response.ok) {
+        const data = await response.json();
+        alert("Product bought successfully!");
+      window.location.reload();
+      } else {
+        const errorData = await response.text(); 
+        alert("Failed to buy product!");
+        console.error(errorData);
+      }
+    } catch (error) {
+      console.error("Error:", error);
+      alert("An error occurred while adding to cart!");
+    }
   };
 
-  // Filter products based on search query
-  const filteredProducts = popularProducts.filter((product) =>
-    product.name.toLowerCase().includes(searchQuery.toLowerCase())
-  );
 
   return (
     <>
       <Header />
       <div className="my-4 mx-8 flex justify-between">
         <h1 className="text-bold text-xl mt-2">
-          (account sa gi tuplok nga category) (unsa ni nga brand)
+          You are currently browsing : {selectedCategory}
         </h1>
         <input
           type="text"
@@ -98,9 +159,9 @@ function Products() {
         />
       </div>
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 mx-5 py-3 mb-10">
-        {filteredProducts.map((product, index) => (
+        {filteredProducts.map((product) => (
           <div
-            key={index}
+            key={product.id}
             className="flex flex-col overflow-hidden rounded-lg border border-gray-200 bg-white shadow-md"
           >
             <img
@@ -110,17 +171,20 @@ function Products() {
             />
             <div className="flex flex-1 flex-col p-4">
               <h3 className="text-lg font-medium overflow-hidden text-ellipsis">
-                {product.name}
+                {product.product_name}
               </h3>
               <span className="text-xl font-bold mb-8">
-                ${product.price.toFixed(2)}
+                ${product.product_price}
               </span>
               <div className="flex flex-col mt-auto gap-2">
-                <button className="rounded-md bg-green-600 px-4 py-2 text-sm font-medium text-white hover:bg-green-700">
+                <button
+                  onClick={() => handleCart(product)}
+                  className="rounded-md bg-green-600 px-4 py-2 text-sm font-medium text-white hover:bg-green-700"
+                >
                   Add to Cart
                 </button>
                 <button
-                  onClick={() => handleBuyNow(product)}
+                  onClick={() => handleCheckout(product)}
                   className="flex justify-center gap-2 rounded-md bg-orange-500 px-4 py-2 text-sm font-medium text-white hover:bg-orange-400"
                 >
                   <FaShoppingCart className="h-5 w-5" />
@@ -133,94 +197,45 @@ function Products() {
       </div>
       <Footer />
 
-      {/* Modal for Order Details */}
-      {isModalOpen && !orderSuccess && (
-        <div
-          className="fixed inset-0 bg-black bg-opacity-50 flex justify-center items-center z-50 transition-opacity duration-300 ease-in-out"
-          onClick={handleCloseModal}
-        >
-          <div
-            className="bg-white p-8 rounded-lg shadow-xl w-96 max-w-lg transform transition-all duration-300 ease-out"
-            onClick={(e) => e.stopPropagation()}
-          >
-            <h1 className="text-2xl font-bold text-center text-gray-900 mb-6">
-              Order Details
-            </h1>
-            <div className="space-y-4">
-              <div className="flex justify-between">
-                <span className="text-gray-700">Product:</span>
-                <span className="text-gray-800 font-semibold">
-                  {selectedProduct?.name}
-                </span>
-              </div>
-              <div className="flex justify-between">
-                <span className="text-gray-700">Price:</span>
-                <span className="text-gray-800 font-semibold">
-                  ${selectedProduct?.price.toFixed(2)}
-                </span>
-              </div>
-
-              {/* Quantity Input */}
-              <div className="flex justify-between items-center">
-                <label className="text-gray-700">Quantity:</label>
-                <div className="flex items-center gap-2">
-                  <button
-                    onClick={() => handleQuantityChange(quantity - 1)}
-                    className="bg-gray-200 text-gray-800 p-2 rounded-full hover:bg-gray-300 transition"
-                  >
-                    -
-                  </button>
-                  <input
-                    type="number"
-                    value={quantity}
-                    onChange={(e) =>
-                      handleQuantityChange(parseInt(e.target.value))
-                    }
-                    className="border border-gray-300 rounded-md w-16 text-center py-2"
-                    min="1"
-                    max={selectedProduct?.stock}
-                  />
-                  <button
-                    onClick={() => handleQuantityChange(quantity + 1)}
-                    className="bg-gray-200 text-gray-800 p-2 rounded-full hover:bg-gray-300 transition"
-                  >
-                    +
-                  </button>
-                </div>
-              </div>
-
-              {/* Order Summary */}
-              <div className="space-y-3 mt-6">
-                <div className="flex justify-between">
-                  <span className="text-gray-700">Subtotal:</span>
-                  <span className="text-gray-800 font-semibold">
-                    ${totalPrice}
-                  </span>
-                </div>
-                <div className="flex justify-between">
-                  <span className="text-gray-700">Shipping:</span>
-                  <span className="text-gray-800 font-semibold">$5.00</span>
-                </div>
-                <div className="flex justify-between font-semibold text-lg text-gray-900">
-                  <span>Total:</span>
-                  <span>${totalAmount}</span>
-                </div>
-              </div>
-
-              <div className="flex justify-between gap-4 mt-8">
-                <button
-                  onClick={handleCloseModal}
-                  className="w-full py-2 text-sm font-semibold text-gray-700 bg-gray-100 rounded-md hover:bg-gray-200 transition"
-                >
-                  Cancel
-                </button>
-                <button
-                  onClick={handlePlaceOrder}
-                  className="w-full py-2 text-sm font-semibold text-white bg-green-600 rounded-md hover:bg-green-700 transition"
-                >
-                  Place Order
-                </button>
-              </div>
+      {/* Modal for adding to cart */}
+      {isModalOpen && selectedProduct && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center">
+          <div className="bg-white rounded-lg p-6 w-3/4 max-w-lg">
+            <h2 className="text-xl font-semibold mb-4">
+              {selectedProduct.product_name}
+            </h2>
+            <img
+              src={selectedProduct.image}
+              alt={selectedProduct.product_name}
+              className="w-full h-48 object-cover mb-4 rounded"
+            />
+            <p className="text-gray-600 mb-4">Price: ${selectedProduct.product_price}</p>
+            <div className="mb-4">
+              <label htmlFor="quantity" className="mr-2">
+                Quantity:
+              </label>
+              <input
+                type="number"
+                id="quantity"
+                min="1"
+                value={quantity}
+                onChange={(e) => handleQuantityChange(Number(e.target.value))}
+                className="border rounded p-2 w-20"
+              />
+            </div>
+            <div className="flex justify-between mt-4">
+              <button
+                onClick={handleAddToCart}
+                className="btn bg-green-500 text-white"
+              >
+                Add to Cart
+              </button>
+              <button
+                onClick={handleCloseModal}
+                className="btn bg-red-500 text-white"
+              >
+                Close
+              </button>
             </div>
           </div>
         </div>
@@ -228,65 +243,15 @@ function Products() {
 
       {/* Success Modal */}
       {orderSuccess && (
-        <div
-          className="fixed inset-0 bg-black bg-opacity-50 flex justify-center items-center z-50 transition-opacity duration-300 ease-in-out"
-          onClick={handleCloseModal}
-        >
-          <div
-            className="bg-white p-8 rounded-lg shadow-xl w-96 max-w-lg transform transition-all duration-300 ease-out"
-            onClick={(e) => e.stopPropagation()}
-          >
-            <h1 className="text-2xl font-bold text-center text-green-700 mb-4">
-              Order Successful!
-            </h1>
-            <p className="text-gray-600 text-center mb-6">
-              Thank you for your purchase!
-            </p>
-            <div className="space-y-3">
-              <div className="flex justify-between">
-                <span className="text-gray-700">Order ID:</span>
-                <span className="text-gray-800 font-semibold">#12345</span>
-              </div>
-              <div className="flex justify-between">
-                <span className="text-gray-700">Product:</span>
-                <span className="text-gray-800 font-semibold">
-                  {selectedProduct?.name}
-                </span>
-              </div>
-              <div className="flex justify-between">
-                <span className="text-gray-700">Price:</span>
-                <span className="text-gray-800 font-semibold">
-                  ${selectedProduct?.price.toFixed(2)}
-                </span>
-              </div>
-              <div className="flex justify-between">
-                <span className="text-gray-700">Quantity:</span>
-                <span className="text-gray-800 font-semibold">{quantity}</span>
-              </div>
-              <div className="flex justify-between">
-                <span className="text-gray-700">Subtotal:</span>
-                <span className="text-gray-800 font-semibold">
-                  ${totalPrice.toFixed(2)}
-                </span>
-              </div>
-              <div className="flex justify-between">
-                <span className="text-gray-700">Shipping:</span>
-                <span className="text-gray-800 font-semibold">$5.00</span>
-              </div>
-              <div className="flex justify-between font-semibold text-lg text-gray-900">
-                <span>Total:</span>
-                <span>${totalAmount.toFixed(2)}</span>
-              </div>
-            </div>
-
-            <div className="mt-6 text-center">
-              <button
-                onClick={handleCloseModal}
-                className="w-full py-2 text-sm font-semibold text-white bg-green-600 rounded-md hover:bg-green-700 transition"
-              >
-                Go to Products
-              </button>
-            </div>
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center">
+          <div className="bg-white rounded-lg p-6 w-3/4 max-w-lg">
+            <h2 className="text-xl font-semibold mb-4">
+              Order Placed Successfully!
+            </h2>
+            <p className="text-gray-600 mb-4">Your order has been placed successfully. Thank you for shopping with us!</p>
+            <button onClick={handleCloseModal} className="btn bg-blue-500 text-white">
+              Close
+            </button>
           </div>
         </div>
       )}

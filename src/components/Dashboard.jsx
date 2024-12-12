@@ -55,14 +55,6 @@ export default function Dashboard() {
           </div>
         </div>
         <CategorySection />
-        <section className="py-8 mb-10">
-          <div className="container mx-auto px-4">
-            <h2 className="mb-6 text-2xl font-bold text-green-600">
-              Our Popular Products
-            </h2>
-            <ProductCard />
-          </div>
-        </section>
         <section className="bg-green-400 mb-10">
           <div className="container mx-auto px-4">
             <div className="flex flex-col items-center justify-between gap-8 md:flex-row p-5">

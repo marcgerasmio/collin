@@ -5,6 +5,7 @@ import Register from "./components/Register";
 import PurchaseHistory from "./components/PurchaseHistory";
 import Products from "./components/Products";
 import AdminDashboard from "./components/AdminDashboard";
+import MultipleItems from "./components/MultipleItems";
 
 export default function App() {
   return (
@@ -16,6 +17,7 @@ export default function App() {
         <Route path="/history" element={<PurchaseHistory />} />
         <Route path="/products" element={<Products />} />
         <Route path="/admin" element={<AdminDashboard />} />
+        <Route path="/multiple-details" element={<MultipleItems />} />
       </Routes>
     </>
   );
