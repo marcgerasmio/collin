@@ -43,50 +43,51 @@ const PurchaseHistory = ({ isOpen, onClose }) => {
         {loading ? (
           <div>Loading...</div>
         ) : (
-          <table className="min-w-full table-auto">
-            <thead>
-              <tr className="bg-gray-100">
-                <th className="py-3 px-4 text-left text-sm font-semibold text-gray-700">
-                  Order ID
-                </th>
-                <th className="py-3 px-4 text-left text-sm font-semibold text-gray-700">
-                  Product Name
-                </th>
-                <th className="py-3 px-4 text-left text-sm font-semibold text-gray-700">
-                  Date
-                </th>
-                <th className="py-3 px-4 text-left text-sm font-semibold text-gray-700">
-                  Total
-                </th>
-              </tr>
-            </thead>
-            <tbody>
-            {transactionData.map((transaction) => (
-              <tr key={transaction.id} className="border-b">
-                <td className="py-3 px-4 text-sm text-gray-800">
-                  {transaction.id}
-                </td>
-                <td className="py-3 px-4 text-sm text-gray-800">
-                  {transaction.product_name}
-                </td>
-                <td className="py-3 px-4 text-sm text-gray-800">
-                  {transaction.date}
-                </td>
-                <td className="py-3 px-4 text-sm text-gray-800">
-                  ${transaction.total}
-                </td>
-              </tr>
-            ))}
-            {transactionData.length === 0 && (
-              <tr>
-                <td colSpan="6" className="py-3 px-4 text-sm text-center text-gray-800">
-                  No transactions found.
-                </td>
-              </tr>
-            )}
-          </tbody>
-
-          </table>
+          <div className="overflow-y-auto max-h-60">
+            <table className="min-w-full table-auto">
+              <thead>
+                <tr className="bg-gray-100">
+                  <th className="py-3 px-4 text-left text-sm font-semibold text-gray-700">
+                    Order ID
+                  </th>
+                  <th className="py-3 px-4 text-left text-sm font-semibold text-gray-700">
+                    Product Name
+                  </th>
+                  <th className="py-3 px-4 text-left text-sm font-semibold text-gray-700">
+                    Date
+                  </th>
+                  <th className="py-3 px-4 text-left text-sm font-semibold text-gray-700">
+                    Total
+                  </th>
+                </tr>
+              </thead>
+              <tbody>
+                {transactionData.map((transaction) => (
+                  <tr key={transaction.id} className="border-b">
+                    <td className="py-3 px-4 text-sm text-gray-800">
+                      {transaction.id}
+                    </td>
+                    <td className="py-3 px-4 text-sm text-gray-800">
+                      {transaction.product_name}
+                    </td>
+                    <td className="py-3 px-4 text-sm text-gray-800">
+                      {transaction.date}
+                    </td>
+                    <td className="py-3 px-4 text-sm text-gray-800">
+                      ${transaction.total}
+                    </td>
+                  </tr>
+                ))}
+                {transactionData.length === 0 && (
+                  <tr>
+                    <td colSpan="4" className="py-3 px-4 text-sm text-center text-gray-800">
+                      No transactions found.
+                    </td>
+                  </tr>
+                )}
+              </tbody>
+            </table>
+          </div>
         )}
       </div>
     </div>

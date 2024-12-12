@@ -1,5 +1,6 @@
 import React, { useState } from "react";
 import { Link } from "react-router-dom";
+import { useNavigate } from "react-router-dom";
 
 function Register() {
   const [image, setImage] = useState(null);
@@ -8,7 +9,60 @@ function Register() {
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
-  const [role, setRole] = useState("user");
+  const navigate = useNavigate();
+
+
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+
+    if (password !== confirmPassword) {
+      alert("Passwords do not match!");
+      return;
+    }
+
+
+    const formData = new FormData();
+
+    if (image) {
+      formData.append("files.image", image);
+    }
+
+    const jsonData = {
+      data: {
+        name: name,
+        email: email,
+        password: password,
+        image,
+
+      }
+    };
+
+    // Convert jsonData to a JSON string
+    const jsonString = JSON.stringify(jsonData);
+
+    try {
+      const response = await fetch("http://localhost:1337/api/customers", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json", // Explicitly set Content-Type to JSON
+        },
+        body: jsonString,
+      });
+
+      if (response.ok) {
+        const data = await response.json();
+        alert("Registration successful!");
+        navigate("/");
+      } else {
+        const errorData = await response.text(); 
+        alert("Registration failed!");
+        console.error(errorData);
+      }
+    } catch (error) {
+      console.error("Error:", error);
+      alert("An error occurred while registering!");
+    }
+  };
 
   return (
     <div className="flex justify-center items-center min-h-screen bg-gray-100">
@@ -16,7 +70,7 @@ function Register() {
         <div className="flex justify-center mb-6">
           <img src="/logo.png" alt="Logo" className="w-40 h-24" />
         </div>
-        <form>
+        <form onSubmit={handleSubmit}>
           <div className="mb-2">
             <input
               type="file"
@@ -72,15 +126,6 @@ function Register() {
             </label>
           </div>
           <div className="mb-4 flex gap-2">
-            <select
-              id="role"
-              className="w-1/2 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-customGreen"
-              value={role}
-              onChange={(e) => setRole(e.target.value)}
-            >
-              <option value="user">User</option>
-              <option value="admin">Admin</option>
-            </select>
             <button
               type="submit"
               className="w-full py-2 bg-orange-500 text-white rounded-lg hover:bg-orange-400 focus:outline-none"

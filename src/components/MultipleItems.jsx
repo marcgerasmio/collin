@@ -49,10 +49,6 @@ function MultipleItems() {
     );
   };
 
-  const handleRemoveItem = (id) => {
-    setOrderItems((prevItems) => prevItems.filter((item) => item.id !== id));
-  };
-
   const subtotal = orderItems.reduce(
     (sum, item) => sum + item.price * item.quantity,
     0
@@ -74,6 +70,7 @@ function MultipleItems() {
           total: item.price * item.quantity,
           customer_name: item?.user_name || "Guest",
           date: formattedDate,
+          branch_name: item.branch_name,
         },
       };
   
