@@ -3,6 +3,7 @@ import { useNavigate } from "react-router-dom";
 import Footer from "./Footer";
 import Header from "./Header";
 import { FaShoppingCart } from "react-icons/fa";
+import { FaLocationDot } from "react-icons/fa6";
 
 function Products() {
   const [products, setProducts] = useState([]);
@@ -14,6 +15,7 @@ function Products() {
   const navigate = useNavigate();
   const selectedCategory = sessionStorage.getItem("selectedCategory");
   const userDetails = JSON.parse(sessionStorage.getItem("user"));
+  const [filter, setFilter] = useState("All");
 
   const totalPrice = selectedProduct ? selectedProduct.product_price * quantity : 0;
   const shipping = 5.0;
@@ -97,9 +99,18 @@ function Products() {
     setOrderSuccess(false);
   };
 
-  const filteredProducts = products.filter((product) =>
-    product.product_name.toLowerCase().includes(searchQuery.toLowerCase())
-  );
+  const filteredProducts = filter === "All"
+  ? products.filter((product) =>
+      product.product_name?.toLowerCase().includes(searchQuery?.toLowerCase() || "")
+    )
+  : products.filter(
+      (product) =>
+        product.branch_name?.toLowerCase() === filter.toLowerCase() &&
+        product.product_name?.toLowerCase().includes(searchQuery?.toLowerCase() || "")
+    );
+
+
+
 
   const handleCheckout = async (product) => {
     console.log(product)
@@ -144,6 +155,8 @@ function Products() {
     }
   };
 
+  
+
 
   return (
     <>
@@ -152,13 +165,24 @@ function Products() {
         <h1 className="text-bold text-xl mt-2">
           You are currently browsing : {selectedCategory}
         </h1>
+        <div className="flex gap-3">
         <input
           type="text"
           placeholder="Search for products..."
           value={searchQuery}
           onChange={(e) => setSearchQuery(e.target.value)}
-          className="p-3 w-1/4 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-green-600"
+          className="p-3 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-green-600"
         />
+        <select className="select select-bordered w-full"
+        onChange={(e) => setFilter(e.target.value)}>
+          <option>All</option>
+          <option>Butuan</option>
+          <option>Ampayon</option>
+          <option>Bayugan</option>
+          <option>Cabadbaran</option>
+          <option>San France</option>
+        </select>
+        </div>
       </div>
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 mx-5 py-3 mb-10">
         {filteredProducts.map((product) => (
@@ -178,6 +202,12 @@ function Products() {
               <span className="text-xl font-bold mb-8">
                 ${product.product_price}
               </span>
+              <div className="flex gap-1 mb-5 ">
+              <FaLocationDot className="mt-1" /> 
+               <p className="text-xl font-bold">
+                {product.branch_name}
+              </p>
+              </div>
               <div className="flex flex-col mt-auto gap-2">
                 <button
                   onClick={() => handleCart(product)}
